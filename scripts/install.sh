@@ -247,7 +247,7 @@ install_php() {
         ${stream}-php-gmp ${stream}-php-intl ${stream}-php-mbstring
         ${stream}-php-opcache ${stream}-php-process ${stream}-php-soap
         ${stream}-php-sodium ${stream}-php-xml ${stream}-php-pecl-igbinary ${stream}-php-pecl-imagick-im7 
-        ${stream}-php-pecl-apcu
+        ${stream}-php-pecl-apcu ${stream}-php-pecl-pecl-redis6
     )
     run_dnf install "${required[@]}"
     install_if_available "${optional[@]}"
