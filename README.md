@@ -6,6 +6,19 @@
 ![Platform](https://img.shields.io/badge/platform-AlmaLinux%209%20%7C%20Rocky%209%20%7C%20RHEL%209-red)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+<p align="left">
+  <img src="assets/logo-litecp.png" alt="LiteCP" width="200">
+</p>
+
+## Requirements
+
+| Resource | Minimum |
+|----------|---------|
+| OS       | AlmaLinux 8/9 / Rocky Linux 8/9 / RHEL 8/9 |
+| RAM      | 512 MB  |
+| Disk     | 5 GB free on `/` |
+| Access   | root or sudo |
+
 ## Target Platform
 
 - AlmaLinux 8.x / 9.x
