@@ -396,7 +396,7 @@ EOF
     if [[ -f ./assets/logowkonsolissh.sh ]]; then
         install -m 0755 ./assets/logowkonsolissh.sh /opt/litecp/config/logowkonsolissh.sh
     fi
-    mkdir -p /etc/motd.d
+    rm -f /etc/motd.d/99-litecp /etc/update-motd.d/99-litecp
     cat > /etc/profile.d/litecp-motd.sh << 'EOF'
 #!/bin/sh
 # Show LiteCP MOTD for interactive SSH/login shells on RHEL-family systems.
@@ -410,8 +410,8 @@ if [ -n "${LITECP_MOTD_SHOWN:-}" ]; then
 fi
 export LITECP_MOTD_SHOWN=1
 
-if [ -x /etc/motd.d/99-litecp ]; then
-  /etc/motd.d/99-litecp
+if [ -x /opt/litecp/config/litecp-motd.sh ]; then
+  /opt/litecp/config/litecp-motd.sh
 fi
 EOF
     chmod 0644 /etc/profile.d/litecp-motd.sh
