@@ -175,7 +175,7 @@ install_php() {
         ${stream}-php-fpm ${stream}-php-cli ${stream}-php-common ${stream}-php-mysqlnd ${stream}-php-pdo
     )
     local optional=(
-        ${stream}-php-bcmath ${stream}-php-gd ${stream}-php-fpm ${stream}-php-zip 
+        ${stream}-php-bcmath ${stream}-php-gd ${stream}-php-xml ${stream}-php-pear
         ${stream}-php-gmp ${stream}-php-intl ${stream}-php-mbstring
         ${stream}-php-opcache ${stream}-php-process ${stream}-php-soap
         ${stream}-php-sodium ${stream}-php-xml ${stream}-php-pecl-igbinary ${stream}-php-pecl-imagick-im7 
@@ -183,6 +183,7 @@ install_php() {
     )
     run_dnf install "${required[@]}"
     install_if_available "${optional[@]}"
+    dnf install -y php-pecl-apcu php-zip php-bcmath php-json php-devel
     mkdir -p /etc/opt/remi/php84/php-fpm.d
     cat > /opt/litecp/config/php-defaults.json << 'EOF'
 {
