@@ -31,6 +31,59 @@ setup_logging() {
     log "Installer log: ${INSTALL_LOG}"
 }
 
+is_litecp_source_dir() {
+    [[ -f "$1/go.mod" && -d "$1/cmd/litecp" && -d "$1/cmd/litecp-agent" ]]
+}
+
+cd_repo_root() {
+    local script_dir candidate
+    script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P 2>/dev/null || pwd -P)"
+
+    for candidate in "${script_dir}/.." "${script_dir}" "${PWD}"; do
+        if is_litecp_source_dir "${candidate}"; then
+            cd "${candidate}"
+            log "Using LiteCP source directory: $(pwd -P)"
+            return 0
+        fi
+    done
+
+    warn "LiteCP source tree was not found relative to install.sh or current directory. It will be cloned after base dependencies are installed."
+}
+
+ensure_source_tree() {
+    if is_litecp_source_dir "$(pwd -P)"; then
+        return 0
+    fi
+
+    local repo_url source_dir branch
+    repo_url="${LITECP_REPO_URL:-https://github.com/zbigniew73/litecp.git}"
+    source_dir="${LITECP_SOURCE_DIR:-/usr/local/src/litecp}"
+    branch="${LITECP_BRANCH:-main}"
+
+    command -v git >/dev/null 2>&1 || error "git is required to clone LiteCP source."
+
+    if [[ -d "${source_dir}/.git" ]]; then
+        log "Updating LiteCP source repository in ${source_dir}..."
+        git -C "${source_dir}" fetch --all --tags
+        git -C "${source_dir}" checkout "${branch}"
+        git -C "${source_dir}" pull --ff-only
+    elif [[ -e "${source_dir}" ]]; then
+        if is_litecp_source_dir "${source_dir}"; then
+            log "Using existing LiteCP source directory: ${source_dir}"
+        else
+            error "${source_dir} exists but is not a LiteCP source tree. Set LITECP_SOURCE_DIR to another path or move the existing directory."
+        fi
+    else
+        log "Cloning LiteCP source from ${repo_url} to ${source_dir}..."
+        mkdir -p "$(dirname -- "${source_dir}")"
+        git clone --branch "${branch}" "${repo_url}" "${source_dir}"
+    fi
+
+    is_litecp_source_dir "${source_dir}" || error "LiteCP source tree is incomplete after clone/update: ${source_dir}"
+    cd "${source_dir}"
+    log "Using LiteCP source directory: $(pwd -P)"
+}
+
 has_systemd() {
     command -v systemctl >/dev/null 2>&1 && [[ -d /run/systemd/system ]]
 }
@@ -135,9 +188,6 @@ install_base_dependencies() {
         libcap make mariadb mariadb-server openssl pam pam-devel policycoreutils procps-ng zstd zip unzip bzip2 git brotli socat
         restic rsync golang sed shadow-utils sqlite sqlite-devel sudo tar unzip wget which mc htop rsyslog which cronie bind-utils net-tools
     )
-    if [[ -f ./go.mod ]]; then
-        deps+=(golang)
-    fi
     run_dnf install "${deps[@]}"
 }
 
@@ -273,8 +323,9 @@ install_binaries() {
     log "Installing LiteCP binaries..."
     local version release_url
     version="${LITECP_VERSION:-latest}"
-    if [[ -f ./go.mod && -d ./cmd/litecp && -d ./cmd/litecp-agent && -x "$(command -v go)" ]]; then
-        log "Building local source with CGO/PAM support..."
+    if [[ -f ./go.mod && -d ./cmd/litecp && -d ./cmd/litecp-agent ]]; then
+        command -v go >/dev/null 2>&1 || error "Go was not found after dependency installation; cannot build LiteCP from source."
+        log "Building local source with CGO/PAM support from $(pwd -P)..."
         CGO_ENABLED=1 go build -o /opt/litecp/bin/litecp ./cmd/litecp
         CGO_ENABLED=1 go build -o /opt/litecp/bin/litecp-agent ./cmd/litecp-agent
     elif [[ -f ./litecp && -f ./litecp-agent ]]; then
@@ -567,12 +618,14 @@ print_summary() {
 main() {
     require_root
     setup_logging
+    cd_repo_root
     print_banner
     detect_os
     detect_arch
     disable_selinux
     install_repositories
     install_base_dependencies
+    ensure_source_tree
     ensure_swap
     create_layout
     ensure_caddy_user
