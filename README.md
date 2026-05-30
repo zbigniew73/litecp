@@ -19,6 +19,12 @@ LiteCP is a Caddy-based Linux control panel adapted for AlmaLinux 8/9 and Rocky 
 - PAM authentication via `/etc/pam.d/litecp`
 - SQLite database at `/opt/litecp/data/litecp.db`
 
+## Quick Install
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/zbigniew73/litecp/main/scripts/install.sh)
+```
+
 ## Paths
 
 ```text
