@@ -168,7 +168,7 @@ disable_selinux() {
 }
 
 install_repositories() {
-    log "Installing EPEL and Remi repositories..."
+    log "Installing EPEL, Remi and MariaDB repositories..."
     run_dnf install dnf-plugins-core ca-certificates curl wget firewalld sudo nano
     if ! rpm -q epel-release >/dev/null 2>&1; then
         run_dnf install "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OS_MAJOR}.noarch.rpm"
@@ -178,6 +178,23 @@ install_repositories() {
     fi
     dnf config-manager --set-enabled epel >/dev/null 2>&1 || true
     dnf config-manager --set-enabled remi-safe >/dev/null 2>&1 || true
+
+    # Avoid mixing Alma/Rocky AppStream MariaDB/MySQL packages with upstream MariaDB.
+    dnf -qy module disable mariadb >/dev/null 2>&1 || true
+    dnf -qy module disable mysql >/dev/null 2>&1 || true
+
+    if [[ ! -f /etc/yum.repos.d/mariadb.repo && ! -f /etc/yum.repos.d/MariaDB.repo ]]; then
+        log "Installing MariaDB 11.8 repository..."
+        curl -fsSL https://r.mariadb.com/downloads/mariadb_repo_setup -o /tmp/mariadb_repo_setup \
+            || error "Failed to download MariaDB repository setup script"
+        bash /tmp/mariadb_repo_setup --mariadb-server-version="mariadb-11.8" \
+            || error "Failed to configure MariaDB 11.8 repository"
+        rm -f /tmp/mariadb_repo_setup
+    else
+        log "MariaDB repository already exists; leaving current repository configuration unchanged."
+    fi
+
+    dnf clean all
     dnf makecache -y
 }
 
@@ -185,7 +202,7 @@ install_base_dependencies() {
     log "Installing base dependencies..."
     local deps=(
         acl bash-completion ca-certificates cronie curl findutils firewalld gawk gcc gzip bash-completion glibc-langpack-pl
-        libcap make mariadb mariadb-server openssl pam pam-devel policycoreutils procps-ng zstd zip unzip bzip2 git brotli socat
+        libcap make MariaDB-server MariaDB-client MariaDB-backup MariaDB-common openssl pam pam-devel policycoreutils procps-ng zstd zip unzip bzip2 git brotli socat
         restic rsync golang sed shadow-utils sqlite sqlite-devel sudo tar unzip wget which mc htop rsyslog which cronie bind-utils net-tools
     )
     run_dnf install "${deps[@]}"
