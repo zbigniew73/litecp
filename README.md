@@ -1,6 +1,6 @@
 # LiteCP
 
-LiteCP is a Caddy-based Linux control panel adapted from FastCP for AlmaLinux 8/9 and Rocky Linux 8/9.
+LiteCP is a Caddy-based Linux control panel adapted for AlmaLinux 8/9 and Rocky Linux 8/9.
 
 ## Target Platform
 
