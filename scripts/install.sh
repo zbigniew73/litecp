@@ -114,7 +114,7 @@ install_base_dependencies() {
     log "Installing base dependencies..."
     local deps=(
         acl bash-completion ca-certificates cronie curl findutils firewalld gawk gcc gzip bash-completion glibc-langpack-pl
-        libcap make mariadb mariadb-server openssl pam pam-devel policycoreutils procps-ng zstd zip unzip bzip2 tar git brotli socat
+        libcap make mariadb mariadb-server openssl pam pam-devel policycoreutils procps-ng zstd zip unzip bzip2 git brotli socat
         restic rsync sed shadow-utils sqlite sqlite-devel sudo tar unzip wget which mc htop rsyslog which cronie bind-utils net-tools
     )
     if [[ -f ./go.mod ]]; then
@@ -175,12 +175,11 @@ install_php() {
         ${stream}-php-fpm ${stream}-php-cli ${stream}-php-common ${stream}-php-mysqlnd ${stream}-php-pdo
     )
     local optional=(
-        ${stream}-php-bcmath ${stream}-php-bz2 ${stream}-php-curl ${stream}-php-gd
-        ${stream}-php-gmp ${stream}-php-imap ${stream}-php-intl ${stream}-php-mbstring
-        ${stream}-php-opcache ${stream}-php-process ${stream}-php-readline ${stream}-php-soap
-        ${stream}-php-sodium ${stream}-php-xml ${stream}-php-zip
-        ${stream}-php-pecl-igbinary ${stream}-php-pecl-imagick-im7 ${stream}-php-pecl-imagick
-        ${stream}-php-pecl-redis6 ${stream}-php-pecl-redis
+        ${stream}-php-bcmath ${stream}-php-gd ${stream}-php-fpm ${stream}-php-zip 
+        ${stream}-php-gmp ${stream}-php-intl ${stream}-php-mbstring
+        ${stream}-php-opcache ${stream}-php-process ${stream}-php-soap
+        ${stream}-php-sodium ${stream}-php-xml ${stream}-php-pecl-igbinary ${stream}-php-pecl-imagick-im7 
+        ${stream}-php-pecl-apcu
     )
     run_dnf install "${required[@]}"
     install_if_available "${optional[@]}"
