@@ -168,16 +168,35 @@ printf "\n"
 `
 
 	existing, err := os.ReadFile(litecpMotd)
-	if err == nil && string(existing) == content {
-		return
+	if err != nil || string(existing) != content {
+		if err := os.WriteFile(litecpMotd, []byte(content), 0755); err != nil {
+			slog.Warn("failed to write LiteCP MOTD script", "path", litecpMotd, "error", err)
+		} else if err := os.Chmod(litecpMotd, 0755); err != nil {
+			slog.Warn("failed to set executable bit on LiteCP MOTD script", "path", litecpMotd, "error", err)
+		}
 	}
 
-	if err := os.WriteFile(litecpMotd, []byte(content), 0755); err != nil {
-		slog.Warn("failed to write LiteCP MOTD script", "path", litecpMotd, "error", err)
-		return
-	}
-	if err := os.Chmod(litecpMotd, 0755); err != nil {
-		slog.Warn("failed to set executable bit on LiteCP MOTD script", "path", litecpMotd, "error", err)
+	profileWrapper := `#!/bin/sh
+# Show LiteCP MOTD for interactive SSH/login shells on RHEL-family systems.
+case "$-" in
+  *i*) ;;
+  *) return 0 2>/dev/null || exit 0 ;;
+esac
+
+if [ -n "${LITECP_MOTD_SHOWN:-}" ]; then
+  return 0 2>/dev/null || exit 0
+fi
+export LITECP_MOTD_SHOWN=1
+
+if [ -x /etc/update-motd.d/99-litecp ]; then
+  /etc/update-motd.d/99-litecp
+fi
+`
+	profilePath := "/etc/profile.d/litecp-motd.sh"
+	if existing, err := os.ReadFile(profilePath); err != nil || string(existing) != profileWrapper {
+		if err := os.WriteFile(profilePath, []byte(profileWrapper), 0644); err != nil {
+			slog.Warn("failed to write LiteCP profile MOTD wrapper", "path", profilePath, "error", err)
+		}
 	}
 }
 
@@ -233,11 +252,13 @@ func (s *Server) ensureCaddyBinary() {
 func (s *Server) ensurePHPIniConfig() {
 	iniDir := "/opt/litecp/config/php"
 	iniFile := filepath.Join(iniDir, "99-litecp.ini")
-	if _, err := os.Stat(iniFile); err == nil {
+	desired := "display_errors = Off\nexpose_php = Off\nerror_reporting = 22527\n"
+	os.MkdirAll(iniDir, 0755)
+	if existing, err := os.ReadFile(iniFile); err == nil && string(existing) == desired {
+		os.Remove("/opt/litecp/phpmyadmin/.user.ini")
 		return
 	}
-	os.MkdirAll(iniDir, 0755)
-	os.WriteFile(iniFile, []byte("display_errors = Off\nerror_reporting = 22527\n"), 0644)
+	os.WriteFile(iniFile, []byte(desired), 0644)
 	os.Remove("/opt/litecp/phpmyadmin/.user.ini")
 	slog.Info("created PHP ini config", "path", iniFile)
 }
@@ -1702,6 +1723,7 @@ clear_env = yes
 security.limit_extensions = .php .phtml
 request_terminate_timeout = 180s
 
+php_admin_value[expose_php] = Off
 php_admin_value[open_basedir] = /opt/litecp/phpmyadmin:/opt/litecp/run/phpmyadmin-tmp:/tmp:/opt/remi/php84/root/usr/share/php:/usr/share/php
 php_admin_value[upload_tmp_dir] = /opt/litecp/run/phpmyadmin-tmp
 php_admin_value[sys_temp_dir] = /opt/litecp/run/phpmyadmin-tmp
@@ -1811,6 +1833,7 @@ clear_env = yes
 security.limit_extensions = .php .phtml
 request_terminate_timeout = 300s
 
+php_admin_value[expose_php] = Off
 php_admin_value[open_basedir] = %s
 php_admin_value[upload_tmp_dir] = %s
 php_admin_value[sys_temp_dir] = %s
@@ -2133,6 +2156,7 @@ func (s *Server) generateCaddyfile() error {
 	// phpMyAdmin internal backend (Go auth proxy forwards to this).
 	// Force HTTP explicitly so reverse proxy scheme always matches.
 	mainBuf.WriteString(`http://127.0.0.1:2088 {
+    header -X-Powered-By
     root * /opt/litecp/phpmyadmin
     php_fastcgi unix//opt/litecp/run/phpmyadmin.sock
     file_server
@@ -2167,7 +2191,8 @@ func (s *Server) generateCaddyfile() error {
 			if site.IsSuspended {
 				mainBuf.WriteString(fmt.Sprintf(`# Site: %s (User: %s) [SUSPENDED]
 %s {
-%s    root * /var/www/suspended
+%s    header -X-Powered-By
+    root * /var/www/suspended
     file_server
     try_files {path} /index.html
 }
@@ -2215,7 +2240,8 @@ func (s *Server) generateCaddyfile() error {
 
 				mainBuf.WriteString(fmt.Sprintf(`# Site: %s (User: %s)%s
 %s {
-%s    root * %s
+%s    header -X-Powered-By
+    root * %s
 %s%s    php_fastcgi unix/%s
     file_server
 %s
