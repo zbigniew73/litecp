@@ -1,0 +1,17 @@
+services:
+  litecp-dev:
+    build: .
+    container_name: litecp-dev
+    privileged: true
+    ports:
+      - "3050:3050"
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - litecp-data:/opt/litecp/data
+      - mariadb-data:/var/lib/mysql
+    command: ["/bin/bash", "-lc", "sleep infinity"]
+
+volumes:
+  litecp-data:
+  mariadb-data:
