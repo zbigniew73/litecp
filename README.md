@@ -41,6 +41,12 @@
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/zbigniew73/litecp/main/scripts/install.sh)
 ```
+Or download first and inspect before running:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/zbigniew73/litecp/main/scripts/install.sh -o install.sh
+bash install.sh
+```
 
 ## Paths
 
