@@ -247,11 +247,10 @@ install_php() {
         ${stream}-php-gmp ${stream}-php-intl ${stream}-php-mbstring
         ${stream}-php-opcache ${stream}-php-process ${stream}-php-soap
         ${stream}-php-sodium ${stream}-php-xml ${stream}-php-pecl-igbinary ${stream}-php-pecl-imagick-im7 
-        ${stream}-php-pecl-apcu ${stream}-php-pecl-pecl-redis6 ${stream}-php-zstd
+        ${stream}-php-pecl-apcu ${stream}-php-json ${stream}-php-devel ${stream}-php-zstd
     )
     run_dnf install "${required[@]}"
     install_if_available "${optional[@]}"
-    dnf install -y php php-pecl-apcu php-bcmath php-json php-devel
     mkdir -p /etc/opt/remi/php84/php-fpm.d
     cat > /opt/litecp/config/php-defaults.json << 'EOF'
 {
