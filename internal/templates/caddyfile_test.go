@@ -26,7 +26,7 @@ func TestGenerateMainCaddyfileUsesStandardCaddyDirectives(t *testing.T) {
 			t.Fatalf("generated Caddyfile contains legacy directive %q:\n%s", legacy, out)
 		}
 	}
-	for _, required := range []string{"admin localhost:2019", "root * /home/siteuser/apps/example_com/public", "php_fastcgi unix//home/siteuser/.litecp/run/php.sock", "file_server"} {
+	for _, required := range []string{"admin localhost:2019", "root * /home/siteuser/apps/example_com/public", "php_fastcgi unix//home/siteuser/.litecp/run/php.sock", "-X-Powered-By", "file_server"} {
 		if !strings.Contains(out, required) {
 			t.Fatalf("generated Caddyfile missing %q:\n%s", required, out)
 		}

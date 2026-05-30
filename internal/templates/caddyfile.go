@@ -49,6 +49,7 @@ const mainCaddyfileTemplate = `{
     header {
         X-Content-Type-Options nosniff
         X-Frame-Options DENY
+        -X-Powered-By
         Referrer-Policy strict-origin-when-cross-origin
         -Server
     }
@@ -88,6 +89,7 @@ const userCaddyfileTemplate = `{
     {{range .Sites}}
     @{{.Domain | safeName}} host {{.Domain}}{{range .Aliases}} {{.}}{{end}}
     handle @{{.Domain | safeName}} {
+        header -X-Powered-By
         root * {{.DocumentRoot}}
         php_fastcgi unix//home/{{$.Username}}/.litecp/run/php.sock
         file_server
