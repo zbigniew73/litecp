@@ -133,7 +133,7 @@ install_base_dependencies() {
     local deps=(
         acl bash-completion ca-certificates cronie curl findutils firewalld gawk gcc gzip bash-completion glibc-langpack-pl
         libcap make mariadb mariadb-server openssl pam pam-devel policycoreutils procps-ng zstd zip unzip bzip2 git brotli socat
-        restic rsync sed shadow-utils sqlite sqlite-devel sudo tar unzip wget which mc htop rsyslog which cronie bind-utils net-tools
+        restic rsync golang sed shadow-utils sqlite sqlite-devel sudo tar unzip wget which mc htop rsyslog which cronie bind-utils net-tools
     )
     if [[ -f ./go.mod ]]; then
         deps+=(golang)
