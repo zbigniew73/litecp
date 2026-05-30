@@ -10,15 +10,33 @@ BLUE='\033[0;34m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+INSTALL_LOG=""
+
 log() { echo -e "${GREEN}[LiteCP]${NC} $*"; }
 warn() { echo -e "${YELLOW}[Warning]${NC} $*"; }
-error() { echo -e "${RED}[Error]${NC} $*"; exit 1; }
+error() {
+    echo -e "${RED}[Error]${NC} $*"
+    [[ -n "${INSTALL_LOG}" ]] && echo "Install log: ${INSTALL_LOG}"
+    exit 1
+}
+
+setup_logging() {
+    mkdir -p /var/log/litecp
+    chmod 0755 /var/log/litecp
+    INSTALL_LOG="${LITECP_INSTALL_LOG:-/var/log/litecp/install-$(date +%Y%m%d-%H%M%S).log}"
+    touch "${INSTALL_LOG}"
+    chmod 0644 "${INSTALL_LOG}"
+    exec > >(tee -a "${INSTALL_LOG}") 2>&1
+    trap 'rc=$?; if [[ $rc -ne 0 ]]; then echo -e "${RED}[Error]${NC} Installer failed with exit code ${rc}"; echo "Install log: ${INSTALL_LOG}"; fi' EXIT
+    log "Installer log: ${INSTALL_LOG}"
+}
 
 has_systemd() {
     command -v systemctl >/dev/null 2>&1 && [[ -d /run/systemd/system ]]
 }
 
 run_dnf() {
+    log "Running: dnf -y $*"
     dnf -y "$@"
 }
 
@@ -196,14 +214,59 @@ EOF
 }
 
 install_caddy() {
-    log "Installing Caddy binary..."
-    local tmp
-    tmp="$(mktemp /tmp/litecp-caddy.XXXXXX)"
-    curl -fsSL "https://caddyserver.com/api/download?os=linux&arch=${CADDY_ARCH}" -o "$tmp"
-    [[ -s "$tmp" ]] || error "Downloaded Caddy binary is empty."
-    install -m 0755 "$tmp" /usr/local/bin/caddy
-    rm -f "$tmp"
-    setcap cap_net_bind_service=+ep /usr/local/bin/caddy 2>/dev/null || true
+    log "Installing Caddy from COPR repository..."
+
+    if command -v caddy >/dev/null 2>&1; then
+        local existing_caddy
+        existing_caddy="$(command -v caddy)"
+        log "Caddy already installed: ${existing_caddy} ($(caddy version 2>/dev/null || echo unknown))"
+        if [[ "${existing_caddy}" != "/usr/local/bin/caddy" && ! -e /usr/local/bin/caddy ]]; then
+            ln -s "${existing_caddy}" /usr/local/bin/caddy
+        fi
+        setcap cap_net_bind_service=+ep "${existing_caddy}" 2>/dev/null || true
+        return 0
+    fi
+
+    if ! command -v dnf >/dev/null 2>&1; then
+        error "dnf is required to install Caddy on AlmaLinux/Rocky Linux."
+    fi
+
+    log "Installing dnf COPR plugin..."
+    if ! dnf -y install 'dnf-command(copr)'; then
+        run_dnf install dnf-plugins-core
+    fi
+
+    log "Enabling Caddy COPR repository @caddy/caddy..."
+    dnf copr enable -y @caddy/caddy || error "Failed to enable @caddy/caddy COPR repository."
+
+    log "Installing Caddy package..."
+    run_dnf install caddy
+
+    local caddy_bin
+    caddy_bin="$(command -v caddy || true)"
+    [[ -n "${caddy_bin}" ]] || error "Caddy package installed but caddy binary was not found in PATH."
+    log "Caddy installed: ${caddy_bin} ($(${caddy_bin} version 2>/dev/null || echo unknown))"
+
+    # LiteCP uses litecp-caddy.service, but migrations and fallback code expect /usr/local/bin/caddy.
+    if [[ "${caddy_bin}" != "/usr/local/bin/caddy" && ! -e /usr/local/bin/caddy ]]; then
+        ln -s "${caddy_bin}" /usr/local/bin/caddy
+    fi
+    setcap cap_net_bind_service=+ep "${caddy_bin}" 2>/dev/null || true
+
+    if has_systemd; then
+        systemctl disable --now caddy >/dev/null 2>&1 || true
+    fi
+}
+
+download_release_binary() {
+    local url="$1"
+    local dest="$2"
+    log "Downloading ${url}"
+    if ! curl -fL --retry 3 --retry-delay 2 --connect-timeout 20 -o "${dest}" "${url}"; then
+        rm -f "${dest}"
+        return 1
+    fi
+    [[ -s "${dest}" ]]
 }
 
 install_binaries() {
@@ -215,6 +278,7 @@ install_binaries() {
         CGO_ENABLED=1 go build -o /opt/litecp/bin/litecp ./cmd/litecp
         CGO_ENABLED=1 go build -o /opt/litecp/bin/litecp-agent ./cmd/litecp-agent
     elif [[ -f ./litecp && -f ./litecp-agent ]]; then
+        log "Installing bundled LiteCP binaries from current directory..."
         cp ./litecp /opt/litecp/bin/litecp
         cp ./litecp-agent /opt/litecp/bin/litecp-agent
     else
@@ -223,8 +287,10 @@ install_binaries() {
         else
             release_url="https://github.com/zbigniew73/litecp/releases/download/${version}"
         fi
-        curl -fsSL "${release_url}/litecp-linux-${ARCH}" -o /opt/litecp/bin/litecp
-        curl -fsSL "${release_url}/litecp-agent-linux-${ARCH}" -o /opt/litecp/bin/litecp-agent
+        if ! download_release_binary "${release_url}/litecp-linux-${ARCH}" /opt/litecp/bin/litecp || \
+           ! download_release_binary "${release_url}/litecp-agent-linux-${ARCH}" /opt/litecp/bin/litecp-agent; then
+            error "LiteCP release binaries are not available at ${release_url}. Run this installer from the litecp source directory with Go installed, place ./litecp and ./litecp-agent next to install.sh, or publish a GitHub release first."
+        fi
     fi
     chmod 0755 /opt/litecp/bin/litecp /opt/litecp/bin/litecp-agent
 }
@@ -486,6 +552,7 @@ print_summary() {
     echo "Username: litecp"
     echo "Password: ${LITECP_PASSWORD}"
     echo "phpMyAdmin: https://${display_host}:3050/phpmyadmin/"
+    [[ -n "${INSTALL_LOG}" ]] && echo "Install log: ${INSTALL_LOG}"
     echo ""
     echo "Useful commands:"
     echo "  systemctl status litecp litecp-agent litecp-caddy"
@@ -498,8 +565,9 @@ print_summary() {
 }
 
 main() {
-    print_banner
     require_root
+    setup_logging
+    print_banner
     detect_os
     detect_arch
     disable_selinux
