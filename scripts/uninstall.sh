@@ -55,6 +55,7 @@ rm -rf /opt/litecp
 rm -rf /var/log/litecp
 rm -f /etc/pam.d/litecp
 rm -f /etc/update-motd.d/99-litecp
+rm -f /etc/profile.d/litecp-motd.sh
 rm -f /etc/my.cnf.d/litecp.cnf
 rm -f /usr/local/bin/caddy
 
