@@ -183,7 +183,7 @@ install_php() {
     )
     run_dnf install "${required[@]}"
     install_if_available "${optional[@]}"
-    dnf install -y php-pecl-apcu php-zip php-bcmath php-json php-devel
+    dnf install -y php-pecl-apcu php-bcmath php-json php-devel
     mkdir -p /etc/opt/remi/php84/php-fpm.d
     cat > /opt/litecp/config/php-defaults.json << 'EOF'
 {
