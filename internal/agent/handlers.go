@@ -1347,6 +1347,55 @@ func fallbackSystemPHPVersion() string {
 	}
 	return "8.4"
 }
+
+func detectMariaDBVersion() string {
+	for _, binary := range []string{"mariadb", "mysql"} {
+		output, err := exec.Command(binary, "-N", "-B", "-e", "SELECT VERSION()").Output()
+		if err == nil {
+			version := strings.TrimSpace(string(output))
+			if version != "" {
+				if strings.Contains(strings.ToLower(version), "mariadb") {
+					return version
+				}
+				return "MariaDB " + version
+			}
+		}
+	}
+
+	for _, binary := range []string{"mariadb", "mysql"} {
+		output, err := exec.Command(binary, "--version").Output()
+		if err != nil {
+			continue
+		}
+		line := strings.TrimSpace(string(output))
+		if line == "" {
+			continue
+		}
+		lower := strings.ToLower(line)
+		if idx := strings.Index(lower, "distrib "); idx >= 0 {
+			rest := line[idx+len("distrib "):]
+			version := strings.FieldsFunc(rest, func(r rune) bool {
+				return r == ',' || r == ' ' || r == '\t'
+			})
+			if len(version) > 0 {
+				if strings.Contains(lower, "mariadb") {
+					return "MariaDB " + version[0]
+				}
+				return version[0]
+			}
+		}
+		fields := strings.Fields(line)
+		for i, field := range fields {
+			if field == "Ver" && i+1 < len(fields) {
+				return strings.TrimSuffix(fields[i+1], ",")
+			}
+		}
+		return line
+	}
+
+	return ""
+}
+
 func resolveDefaultPHPVersion(available []string) string {
 	data, err := os.ReadFile(phpDefaultCfgPath)
 	if err == nil {
@@ -2735,17 +2784,8 @@ func (s *Server) handleSystemStatus(ctx context.Context, params json.RawMessage)
 	availablePHPVersions := detectAvailablePHPVersions()
 	phpVersion := resolveDefaultPHPVersion(availablePHPVersions)
 
-	// Get MySQL version
-	mysqlVersion := ""
-	if output, err := exec.Command("mysql", "--version").Output(); err == nil {
-		parts := strings.Fields(string(output))
-		for i, p := range parts {
-			if p == "Ver" && i+1 < len(parts) {
-				mysqlVersion = parts[i+1]
-				break
-			}
-		}
-	}
+	// Get MariaDB/MySQL-compatible server version.
+	mysqlVersion := detectMariaDBVersion()
 
 	// Get Caddy version
 	caddyVersion := ""
