@@ -98,7 +98,7 @@ disable_selinux() {
 
 install_repositories() {
     log "Installing EPEL and Remi repositories..."
-    run_dnf install dnf-plugins-core ca-certificates curl wget
+    run_dnf install dnf-plugins-core ca-certificates curl wget firewalld sudo nano
     if ! rpm -q epel-release >/dev/null 2>&1; then
         run_dnf install "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OS_MAJOR}.noarch.rpm"
     fi
