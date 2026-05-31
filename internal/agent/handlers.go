@@ -3379,6 +3379,7 @@ func resolveInstallablePHPPackages(version string) ([]string, error) {
 		stream + "-php-pecl-imagick-im7",
 		stream + "-php-pecl-imagick",
 		stream + "-php-pecl-apcu",
+		stream + "-php-pecl-zip",
 		stream + "-php-pecl-redis6",
 		stream + "-php-pecl-redis",
 	}
