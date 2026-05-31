@@ -184,11 +184,11 @@ install_repositories() {
     dnf -qy module disable mysql >/dev/null 2>&1 || true
 
     if [[ ! -f /etc/yum.repos.d/mariadb.repo && ! -f /etc/yum.repos.d/MariaDB.repo ]]; then
-        log "Installing MariaDB 11.8 repository..."
+        log "Installing MariaDB 10.11 repository..."
         curl -fsSL https://r.mariadb.com/downloads/mariadb_repo_setup -o /tmp/mariadb_repo_setup \
             || error "Failed to download MariaDB repository setup script"
-        bash /tmp/mariadb_repo_setup --mariadb-server-version="mariadb-11.8" \
-            || error "Failed to configure MariaDB 11.8 repository"
+        bash /tmp/mariadb_repo_setup --mariadb-server-version="mariadb-10.11" \
+            || error "Failed to configure MariaDB 10.11 repository"
         rm -f /tmp/mariadb_repo_setup
     else
         log "MariaDB repository already exists; leaving current repository configuration unchanged."
