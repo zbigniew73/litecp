@@ -87,9 +87,8 @@ Remove restic from the package list.
 
 Save the file.
 
-Run the Installer
+Run the Installer. After completing the above steps, you can proceed with LiteCP installation:
 
-After completing the above steps, you can proceed with LiteCP installation:
 ```bash
 bash install.sh
 ```
