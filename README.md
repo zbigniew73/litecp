@@ -48,6 +48,50 @@ curl -fsSL https://raw.githubusercontent.com/zbigniew73/litecp/main/scripts/inst
 bash install.sh
 ```
 
+## AlmaLinux 8 / Rocky Linux 8 – Required Restic Installation
+
+On Enterprise Linux 8-based systems (AlmaLinux 8, Rocky Linux 8), the restic package is not available in the EPEL 8 repository. Before running the LiteCP installer, Restic must be installed manually from official binaries.
+
+### Restic Installation
+
+```bash
+RESTIC_VERSION=0.18.1
+curl -LO https://github.com/restic/restic/releases/download/v${RESTIC_VERSION}/restic_${RESTIC_VERSION}_linux_amd64.bz2
+bunzip2 restic_${RESTIC_VERSION}_linux_amd64.bz2
+chmod +x restic_${RESTIC_VERSION}_linux_amd64
+mv restic_${RESTIC_VERSION}_linux_amd64 /usr/local/bin/restic
+```
+
+### Verify Installation
+
+restic version
+Example output:
+restic 0.18.1 compiled with go1.x on linux/amd64
+
+### Download LiteCP Installer
+
+Download the latest installation script:
+```bash
+curl -fsSL https://raw.githubusercontent.com/zbigniew73/litecp/main/scripts/install.sh -o install.sh
+```
+
+### Modify the Installer Script
+
+On AlmaLinux 8 / Rocky Linux 8 systems, you must remove the restic package from the installation list inside the installer script.
+
+Open install.sh in a text editor.
+Locate line approximately 206, which contains restic.
+Remove restic from the package list.
+Save the file.
+Run the Installer
+
+After completing the above steps, you can proceed with LiteCP installation:
+```bash
+bash install.sh
+```
+
+> Note: This step is required only for AlmaLinux 8 and Rocky Linux 8. On AlmaLinux 9 and Rocky Linux 9, restic is available in the default repositories and does not require manual installation.
+
 ## Paths
 
 ```text
