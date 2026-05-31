@@ -65,7 +65,9 @@ mv restic_${RESTIC_VERSION}_linux_amd64 /usr/local/bin/restic
 ### Verify Installation
 
 restic version
+
 Example output:
+
 restic 0.18.1 compiled with go1.x on linux/amd64
 
 ### Download LiteCP Installer
@@ -80,9 +82,13 @@ curl -fsSL https://raw.githubusercontent.com/zbigniew73/litecp/main/scripts/inst
 On AlmaLinux 8 / Rocky Linux 8 systems, you must remove the restic package from the installation list inside the installer script.
 
 Open install.sh in a text editor.
+
 Locate line approximately 206, which contains restic.
+
 Remove restic from the package list.
+
 Save the file.
+
 Run the Installer
 
 After completing the above steps, you can proceed with LiteCP installation:
