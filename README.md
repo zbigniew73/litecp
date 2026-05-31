@@ -66,9 +66,7 @@ mv restic_${RESTIC_VERSION}_linux_amd64 /usr/local/bin/restic
 
 restic version
 
-Example output:
-
-restic 0.18.1 compiled with go1.x on linux/amd64
+Example output: restic 0.18.1 compiled with go1.x on linux/amd64
 
 ### Download LiteCP Installer
 
