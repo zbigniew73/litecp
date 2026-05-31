@@ -1671,7 +1671,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Install Additional PHP Version</label>
                                 <div class="flex flex-wrap gap-2">
-                                    <template x-for="version in ['8.2', '8.3', '8.4', '8.5']" :key="'install-php-' + version">
+                                    <template x-for="version in ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']" :key="'install-php-' + version">
                                         <button @click="installPHPVersion(version)"
                                                 :disabled="isPHPVersionInstalled(version) || phpVersionInstalling[version]"
                                                 class="inline-flex items-center px-3 py-2 border rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -3548,7 +3548,7 @@
                 async loadSystemStatus() {
                     this.systemStatus = await this.api('/system/status');
                     const systemDefault = this.systemStatus?.php_version;
-                    if (!this.phpDefaultConfig?.default_php_version && systemDefault && ['8.2', '8.3', '8.4', '8.5'].includes(systemDefault)) {
+                    if (!this.phpDefaultConfig?.default_php_version && systemDefault && ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5'].includes(systemDefault)) {
                         this.newSite.php_version = systemDefault;
                     }
                 },
