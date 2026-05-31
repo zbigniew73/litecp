@@ -3372,12 +3372,13 @@ func resolveInstallablePHPPackages(version string) ([]string, error) {
 	}
 	optional := []string{
 		"bcmath", "bz2", "curl", "gd", "gmp", "imap", "intl", "mbstring", "opcache",
-		"process", "readline", "soap", "sodium", "xml", "zip",
+		"process", "readline", "soap", "sodium", "imap", "xml", "zip",
 	}
 	peclOptional := []string{
 		stream + "-php-pecl-igbinary",
 		stream + "-php-pecl-imagick-im7",
 		stream + "-php-pecl-imagick",
+		stream + "-php-pecl-imap",
 		stream + "-php-pecl-apcu",
 		stream + "-php-pecl-zip",
 		stream + "-php-pecl-redis6",
