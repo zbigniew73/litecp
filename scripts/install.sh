@@ -263,8 +263,8 @@ install_php() {
         ${stream}-php-bcmath ${stream}-php-gd ${stream}-php-xml ${stream}-php-pear
         ${stream}-php-gmp ${stream}-php-intl ${stream}-php-mbstring
         ${stream}-php-opcache ${stream}-php-process ${stream}-php-soap
-        ${stream}-php-sodium ${stream}-php-xml ${stream}-php-pecl-igbinary ${stream}-php-pecl-imagick-im7 
-        ${stream}-php-pecl-apcu ${stream}-php-json ${stream}-php-devel ${stream}-php-zstd
+        ${stream}-php-sodium ${stream}-php-xml ${stream}-php-pecl-igbinary 
+        ${stream}-php-pecl-apcu ${stream}-php-devel ${stream}-php-zstd
     )
     run_dnf install "${required[@]}"
     install_if_available "${optional[@]}"
